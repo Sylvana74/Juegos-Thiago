@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COREBREAKER — Campaña 2D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="eyebrow">Campaña arcade · Boss rush 2D</div>
+        <h1>CORE<span>BREAKER</span></h1>
+        <p class="subtitle">Dos mundos, diez jefes y un mapa que se abre con cada victoria.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Ruta</span><strong id="levelStat">M1 · 1/5</strong></div>
+        <div class="stat"><span>Armadura</span><strong id="armorStat">8 / 8</strong></div>
+        <div class="stat"><span>Vida del jefe</span><strong id="bossStat">100%</strong></div>
+        <div class="stat"><span>Tu energía</span><strong id="playerStat">100 / 100</strong></div>
+        <div class="stat"><span>Créditos</span><strong id="creditsStat">0</strong></div>
+        <div class="stat"><span>FPS</span><strong id="fpsStat">—</strong></div>
+      </div>
+    </header>
+
+    <section class="arena">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="Juego Corebreaker"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <div class="eyebrow" id="overlayEyebrow">CAMPAÑA // SELECCIONÁ TU RUTA</div>
+          <h2 id="overlayTitle">MAPA DE CAMPAÑA</h2>
+          <p id="overlayText">Elegí un nodo desbloqueado para entrar al combate. Los jefes derrotados se pueden repetir.</p>
+          <section id="mapPanel" class="world-map" aria-label="Mapa de campaña">
+            <div id="mapWorlds" class="worlds-grid"></div>
+            <p id="mapMessage" class="map-message">¡La campaña empezó! Tocá el nodo 1 del Mundo 1 para comenzar.</p>
+          </section>
+          <section id="shopPanel" class="shop hidden" aria-label="Tienda de mejoras">
+            <div class="shop-heading">
+              <div>
+                <div class="eyebrow">Preparación para el próximo combate</div>
+                <h3>Tienda de mejoras</h3>
+              </div>
+              <div class="shop-wallet"><span>Créditos</span><strong id="shopCredits">0</strong></div>
+            </div>
+            <div id="shopItems" class="shop-items"></div>
+            <p class="shop-note" id="shopNote">Comprá mejoras antes de continuar. Tus mejoras se conservan durante la campaña.</p>
+          </section>
+          <button id="startBtn">Iniciar combate</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="bottom">
+      <div class="keys">
+        <span>Mover:</span><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd>
+        <span>o</span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+        <span>· Pausa:</span><kbd>P</kbd>
+      </div>
+      <div>Apuntar: mouse · Disparar: mantener clic izquierdo</div>
+      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" title="Activar o silenciar la música y los efectos">🔊 Sonido: activado</button>
+    </div>
+
+    <div class="tip">
+      <strong>Campaña:</strong> dos mundos con cinco jefes cada uno. El Mundo 2 trae proyectiles curvos, balas enormes y ataques que se dividen. Al ganar, volvé al mapa, visitá la tienda y elegí el próximo nodo desbloqueado.
+    </div>
+  </main>
+  <script src="game.js" defer></script>
+</body>
+</html>

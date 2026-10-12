@@ -1,0 +1,31 @@
+COREBREAKER — CAMPAÑA DE 6 JEFES
+================================
+
+CÓMO ABRIRLO
+1. Extraé el archivo ZIP en una carpeta.
+2. Abrí index.html con doble clic para jugar en tu navegador.
+3. Para cambiar el código, abrí esa misma carpeta desde Visual Studio Code.
+No necesita Internet ni instalaciones adicionales para jugar.
+
+CONTROLES
+- Flechas o W, A, S, D: mover el cursor/nave.
+- Mouse: apuntar.
+- Clic izquierdo mantenido: disparar.
+- P: pausar y reanudar.
+
+NOVEDADES
+- El contacto con el jefe causa daño. La zona de peligro incluye el núcleo,
+  la armadura y los brazos; si entrás, te daña y te empuja hacia afuera.
+- Cada placa rota entrega 12 créditos. Al derrotar un jefe recibís una
+  recompensa adicional.
+- Después de cada uno de los primeros cinco jefes se abre la tienda.
+- Podés mejorar la cadencia de disparo, el daño a la armadura, el daño al
+  núcleo, la energía máxima y la velocidad. También podés comprar reparaciones.
+- Las mejoras se conservan entre jefes y al reintentar un combate.
+- Recuperás hasta 35 puntos de energía al vencer un jefe. Al reintentar,
+  volvés con la energía completa.
+
+ARCHIVOS
+- index.html: estructura de la página y la interfaz.
+- style.css: colores, tamaños y aspecto visual.
+- game.js: movimiento, jefes, proyectiles, daño, tienda y mejoras.

@@ -1,0 +1,56 @@
+COREBREAKER — CAMPAÑA 2.3
+=========================
+
+ARCHIVOS
+--------
+index.html  : estructura de la página y menús.
+style.css   : apariencia, mapa, HUD, tienda y logros.
+game.js     : combate, jefes, armas, objetos, audio y progreso.
+
+CÓMO JUGAR
+----------
+1. Extraé todos los archivos a una misma carpeta.
+2. Abrí index.html con doble clic para jugar en Chrome, Edge o Firefox.
+3. En el mapa, elegí un nodo desbloqueado.
+
+CONTROLES
+---------
+Flechas o WASD : mover la nave.
+Mouse          : apuntar.
+Clic izquierdo: disparar mientras se mantiene pulsado.
+Shift o Espacio: esquiva rápida con unos instantes de invulnerabilidad.
+1              : arma Pulso (inicial y equilibrada).
+2              : arma Triple (desbloqueable en la tienda).
+3              : arma Láser (desbloqueable en la tienda).
+P              : pausar o continuar.
+M              : activar/silenciar audio.
+
+NOVEDADES
+---------
+- Esquiva con recarga; su barra aparece durante el combate.
+- Los diez jefes tienen una segunda fase al bajar al 50% de vida: aviso visual, destello, anillos de energía, núcleo sobrecargado, giro más rápido y ataques especiales más frecuentes.
+- Tres armas distintas: Pulso, Triple y Láser.
+- Cada 8,5–10,5 segundos pueden aparecer objetos de curación, escudo, sobrecarga
+  de disparo o créditos extra en zonas libres de la arena (máximo dos a la vez).
+- HUD de vida del jefe, fase, arma equipada, esquiva y efectos temporales.
+- Dificultad Tranquila, Normal o Difícil (se aplica al siguiente combate).
+- Volumen independiente de música y efectos de sonido.
+- Diez logros, visibles desde el botón «Ver logros» del mapa.
+- Guardado automático de jefes desbloqueados, jefes completados, créditos,
+  mejoras, armas, dificultad, volumen y logros usando el almacenamiento local
+  del navegador.
+
+TIENDA
+------
+Al derrotar a un jefe (salvo el jefe final de campaña) aparece la tienda.
+Podés comprar mejoras existentes y desbloquear/equipar Triple o Láser.
+Las armas adquiridas y las mejoras se conservan si cerrás y volvés a abrir
+el juego usando el mismo navegador, perfil y ubicación de la carpeta.
+
+NOTAS
+-----
+No necesita instalaciones, bibliotecas externas ni conexión a Internet.
+El sonido se genera con Web Audio API dentro del navegador.
+El guardado depende de que el navegador permita almacenamiento local para
+esta ubicación de la carpeta. Si el navegador lo bloquea, el juego sigue funcionando, pero
+el progreso puede no persistir al cerrar la página.

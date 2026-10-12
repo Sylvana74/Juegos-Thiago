@@ -1,0 +1,1137 @@
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const overlay = $('overlay');
+  const startBtn = $('startBtn');
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const CX = W / 2;
+  const CY = H / 2;
+  const TAU = Math.PI * 2;
+  const CONTACT_RADIUS = 96;
+
+  // Los precios son por nivel. Las mejoras permanecen compradas entre los seis jefes.
+  const UPGRADES = [
+    { id: 'cadence', name: 'Disparo rápido', description: 'Disparás más seguido.', prices: [65, 95, 130], levels: 3, levelText: 'Cadencia' },
+    { id: 'rounds', name: 'Munición perforante', description: 'Cada disparo destruye más armadura.', prices: [90, 130], levels: 2, levelText: 'Daño a la armadura' },
+    { id: 'reactor', name: 'Núcleo amplificado', description: 'Hacés más daño cuando el núcleo queda expuesto.', prices: [75, 105, 140], levels: 3, levelText: 'Daño al núcleo' },
+    { id: 'hull', name: 'Blindaje personal', description: '+20 de energía máxima y recuperás 20.', prices: [75, 105, 140], levels: 3, levelText: 'Energía máxima' },
+    { id: 'thrusters', name: 'Propulsores', description: 'Te movés un 12% más rápido por nivel.', prices: [60, 90, 120], levels: 3, levelText: 'Velocidad' },
+    { id: 'repair', name: 'Reparación rápida', description: 'Recuperás 35 puntos de energía.', prices: [40], levels: Infinity, levelText: 'Reparación', repeatable: true }
+  ];
+
+  // Diez jefes organizados en dos mundos de cinco combates.
+  // Mundo 1: cuatro jefes originales + Núcleo Omega como quinto.
+  // Mundo 2: Eclipse y cuatro jefes nuevos con proyectiles especiales.
+  const BOSSES = [
+    {
+      name: 'EL GUARDIÁN', subtitle: 'La puerta del vacío', world: 0,
+      hint: 'Alterna anillos, disparos dirigidos y ráfagas giratorias.',
+      armorCount: 8, plateHP: 3, hp: 100, coreR: 34, spin: 0.78,
+      interval: 1.08, minInterval: 0.68, bulletSpeed: 142, damage: 18,
+      radialCount: 12, fanCount: 3, fanSpread: 0.38, spiralCount: 8, spiralSpread: 0.78,
+      patterns: ['radial', 'fan', 'spiral'],
+      armorColor: '#ffbd62', armorHot: '#ff806d', coreColor: '#ed4f87', glow: '#ff638f',
+      bulletColor: '#ff547d', secondBulletColor: '#ffb45f', shape: 'hex', arms: 4
+    },
+    {
+      name: 'CENTINELA ORBITAL', subtitle: 'El guardián de los cuatro ejes', world: 0,
+      hint: 'Abanicos de cinco disparos y ráfagas en cruz.',
+      armorCount: 8, plateHP: 3, hp: 118, coreR: 33, spin: 0.98,
+      interval: 0.98, minInterval: 0.61, bulletSpeed: 154, damage: 18,
+      radialCount: 14, fanCount: 5, fanSpread: 0.64, spiralCount: 9, spiralSpread: 0.92, crossCount: 4,
+      patterns: ['fan', 'cross', 'radial'],
+      armorColor: '#67dfff', armorHot: '#b2f7ff', coreColor: '#245dd1', glow: '#47b9ff',
+      bulletColor: '#4ed7ff', secondBulletColor: '#91a6ff', shape: 'diamond', arms: 4
+    },
+    {
+      name: 'REACTOR INESTABLE', subtitle: 'Una máquina al borde del colapso', world: 0,
+      hint: 'Diez placas y anillos más densos a mayor velocidad.',
+      armorCount: 10, plateHP: 3, hp: 138, coreR: 32, spin: 1.17,
+      interval: 0.88, minInterval: 0.55, bulletSpeed: 168, damage: 18,
+      radialCount: 15, fanCount: 5, fanSpread: 0.72, spiralCount: 9, spiralSpread: 1.05, crossCount: 6,
+      patterns: ['radial', 'spiral', 'fan', 'cross'],
+      armorColor: '#ffc46b', armorHot: '#fff0a0', coreColor: '#b83a23', glow: '#ff8b42',
+      bulletColor: '#ff8447', secondBulletColor: '#ffd166', shape: 'octagon', arms: 6
+    },
+    {
+      name: 'HIDRA DE PLASMA', subtitle: 'La tormenta viviente', world: 0,
+      hint: 'Placas reforzadas, anillos dobles y abanicos dirigidos.',
+      armorCount: 10, plateHP: 4, hp: 158, coreR: 32, spin: 1.34,
+      interval: 0.81, minInterval: 0.50, bulletSpeed: 178, damage: 19,
+      radialCount: 13, fanCount: 5, fanSpread: 0.82, spiralCount: 10, spiralSpread: 1.12,
+      aimedCount: 3, crossCount: 6,
+      patterns: ['fan', 'doubleRing', 'aimed', 'spiral'],
+      armorColor: '#d78bff', armorHot: '#ffc1fb', coreColor: '#6e28a8', glow: '#d85aff',
+      bulletColor: '#e879ff', secondBulletColor: '#ff8fce', shape: 'star', arms: 5
+    },
+    {
+      name: 'NÚCLEO OMEGA', subtitle: 'El guardián del primer portal', world: 0,
+      hint: 'El quinto jefe del primer mundo: catorce placas y patrones combinados.',
+      armorCount: 14, plateHP: 4, hp: 225, coreR: 30, spin: 1.82,
+      interval: 0.64, minInterval: 0.40, bulletSpeed: 202, damage: 20,
+      radialCount: 16, fanCount: 7, fanSpread: 1.02, spiralCount: 12, spiralSpread: 1.48,
+      aimedCount: 5, crossCount: 8,
+      patterns: ['doubleRing', 'fan', 'spiral', 'cross', 'aimed'],
+      armorColor: '#ff737d', armorHot: '#fff0c2', coreColor: '#9b1c3e', glow: '#ff435f',
+      bulletColor: '#ff536b', secondBulletColor: '#ffc15f', shape: 'omega', arms: 8
+    },
+    {
+      name: 'ECLIPSE', subtitle: 'La sombra del segundo mundo', world: 1,
+      hint: 'El nuevo sector empieza con ataques más rápidos y anillos dobles.',
+      armorCount: 12, plateHP: 4, hp: 246, coreR: 31, spin: 1.68,
+      interval: 0.62, minInterval: 0.39, bulletSpeed: 207, damage: 21,
+      radialCount: 16, fanCount: 7, fanSpread: 0.98, spiralCount: 12, spiralSpread: 1.34,
+      aimedCount: 4, crossCount: 8,
+      patterns: ['spiral', 'fan', 'doubleRing', 'cross', 'aimed'],
+      armorColor: '#a7a3ff', armorHot: '#f4d6ff', coreColor: '#27204f', glow: '#9c75ff',
+      bulletColor: '#9e78ff', secondBulletColor: '#ff77b7', shape: 'eclipse', arms: 6
+    },
+    {
+      name: 'SERPIENTE NEBULAR', subtitle: 'La trayectoria imposible', world: 1,
+      hint: 'Sus proyectiles curvos te persiguen lentamente: cambiá de dirección y no te quedes quieto.',
+      armorCount: 10, plateHP: 4, hp: 266, coreR: 31, spin: 1.73,
+      interval: 0.60, minInterval: 0.37, bulletSpeed: 210, damage: 22,
+      radialCount: 16, fanCount: 5, fanSpread: 0.72, aimedCount: 4, curveCount: 5,
+      curveSpread: 0.86, turnRate: 0.92, waveCount: 5, waveSpread: 1.02,
+      patterns: ['curvedFan', 'wave', 'aimed', 'spiral'],
+      armorColor: '#5bf0d2', armorHot: '#d0fff1', coreColor: '#126c83', glow: '#43f5dd',
+      bulletColor: '#43f5dd', secondBulletColor: '#7ca8ff', shape: 'serpent', arms: 6
+    },
+    {
+      name: 'COLOSO SOLAR', subtitle: 'Lluvia de soles', world: 1,
+      hint: 'Dispara proyectiles enormes que avanzan más despacio, pero ocupan mucho espacio y hacen más daño.',
+      armorCount: 12, plateHP: 4, hp: 292, coreR: 34, spin: 1.82,
+      interval: 0.58, minInterval: 0.35, bulletSpeed: 205, damage: 23,
+      radialCount: 12, fanCount: 5, fanSpread: 0.80, bigCount: 10, bigFanCount: 5,
+      patterns: ['bigRing', 'bigFan', 'radial', 'aimed'],
+      armorColor: '#ffb64d', armorHot: '#fff2a6', coreColor: '#c34b18', glow: '#ffab38',
+      bulletColor: '#ff8a36', secondBulletColor: '#ffe16b', shape: 'sun', arms: 8
+    },
+    {
+      name: 'MATRIZ FANTASMA', subtitle: 'Nada desaparece del todo', world: 1,
+      hint: 'Sus proyectiles se dividen en tres al avanzar. Esquivá la primera bala y preparate para las que vienen detrás.',
+      armorCount: 12, plateHP: 5, hp: 320, coreR: 30, spin: 1.94,
+      interval: 0.55, minInterval: 0.33, bulletSpeed: 220, damage: 23,
+      radialCount: 16, fanCount: 5, fanSpread: 0.90, splitCount: 3, splitAfter: 0.90,
+      waveCount: 5, waveSpread: 0.90, crossCount: 8,
+      patterns: ['split', 'doubleRing', 'cross', 'wave'],
+      armorColor: '#b4a5ff', armorHot: '#f5e8ff', coreColor: '#403080', glow: '#b59bff',
+      bulletColor: '#b59bff', secondBulletColor: '#63e4ff', shape: 'gear', arms: 8
+    },
+    {
+      name: 'QUIMERA GRAVITACIONAL', subtitle: 'El corazón de la anomalía', world: 1,
+      hint: 'Jefe final: mezcla proyectiles curvos, soles enormes y balas que se dividen. No dejes de moverte.',
+      armorCount: 14, plateHP: 5, hp: 365, coreR: 32, spin: 2.02,
+      interval: 0.50, minInterval: 0.30, bulletSpeed: 232, damage: 25,
+      radialCount: 18, fanCount: 7, fanSpread: 1.04, aimedCount: 5, crossCount: 8,
+      bigCount: 10, curveCount: 5, curveSpread: 0.92, turnRate: 1.12,
+      splitCount: 3, splitAfter: 0.82, waveCount: 7, waveSpread: 1.15,
+      patterns: ['curvedFan', 'bigRing', 'split', 'aimed', 'wave', 'doubleRing'],
+      armorColor: '#ff6cc9', armorHot: '#ffe1f6', coreColor: '#7e145b', glow: '#ff59cf',
+      bulletColor: '#ff59cf', secondBulletColor: '#ffbf69', shape: 'singularity', arms: 10
+    }
+  ];
+
+  const WORLDS = [
+    {
+      name: 'MUNDO 1', title: 'BORDE DEL VACÍO',
+      description: 'Aprendé los patrones y abrí el portal de Omega.',
+      startIndex: 0, endIndex: 4, theme: 'world-one',
+      bossIndices: [0, 1, 2, 3, 4]
+    },
+    {
+      name: 'MUNDO 2', title: 'ZONA DE ANOMALÍAS',
+      description: 'Proyectiles curvos, soles gigantes y ataques que se dividen.',
+      startIndex: 5, endIndex: 9, theme: 'world-two',
+      bossIndices: [5, 6, 7, 8, 9]
+    }
+  ];
+
+  let state = 'map'; // map, playing, paused, between, won, lost
+  let last = 0;
+  let fps = 60;
+  let fpsClock = 0;
+  let fpsFrames = 0;
+  let score = 0;
+  let gameTime = 0;
+  let shake = 0;
+  let levelIndex = 0;
+  let unlockedBossIndex = 0;
+  let completedBosses = new Set();
+  let credits = 0;
+  const keys = new Set();
+  const mouse = { x: W * 0.72, y: H * 0.5, down: false };
+  let player;
+  let boss;
+  let shots = [];
+  let enemyShots = [];
+  let particles = [];
+  let stars = [];
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function makePlayer() {
+    const result = {
+      x: W * 0.5, y: H - 62, r: 10,
+      speed: 255, maxHp: 100, hp: 100,
+      fireInterval: 0.14, armorDamage: 1, coreDamage: 2.3,
+      upgrades: { cadence: 0, rounds: 0, reactor: 0, hull: 0, thrusters: 0 },
+      invuln: 0, fireCD: 0
+    };
+    return result;
+  }
+
+  function makeBoss(index) {
+    const config = BOSSES[index];
+    return {
+      config,
+      x: CX,
+      y: CY - 8,
+      r: config.coreR,
+      angle: 0,
+      spin: config.spin,
+      contactRadius: CONTACT_RADIUS,
+      contactDamage: config.damage + 4,
+      hp: config.hp,
+      maxHp: config.hp,
+      armor: Array.from({ length: config.armorCount }, () => ({ hp: config.plateHP, maxHp: config.plateHP, alive: true, flash: 0 })),
+      shootCD: 0.85,
+      pattern: 0
+    };
+  }
+
+  function setupCampaign() {
+    player = makePlayer();
+    levelIndex = 0;
+    boss = makeBoss(0);
+    shots = [];
+    enemyShots = [];
+    particles = [];
+    score = 0;
+    credits = 0;
+    gameTime = 0;
+    shake = 0;
+    unlockedBossIndex = 0;
+    completedBosses = new Set();
+    fpsClock = 0;
+    fpsFrames = 0;
+    stars = Array.from({ length: 95 }, () => ({ x: rand(0, W), y: rand(0, H), r: rand(.5, 1.7), a: rand(.18, .8), sp: rand(3, 15) }));
+    updateStats();
+  }
+
+  function worldIndexForBoss(index) {
+    return Math.floor(index / 5);
+  }
+
+  function stageNumberForBoss(index) {
+    return (index % 5) + 1;
+  }
+
+  function updateStats() {
+    const world = worldIndexForBoss(levelIndex);
+    $('levelStat').textContent = `M${world + 1} · ${stageNumberForBoss(levelIndex)}/5`;
+    $('armorStat').textContent = boss ? `${boss.armor.filter((p) => p.alive).length} / ${boss.armor.length}` : '—';
+    $('bossStat').textContent = boss ? `${Math.ceil(Math.max(0, boss.hp) / boss.maxHp * 100)}%` : '100%';
+    $('playerStat').textContent = player ? `${Math.ceil(Math.max(0, player.hp))} / ${player.maxHp}` : '100 / 100';
+    $('creditsStat').textContent = String(credits);
+  }
+
+  function showOverlay(title, text, buttonText) {
+    $('overlayTitle').textContent = title;
+    $('overlayText').textContent = text;
+    startBtn.textContent = buttonText;
+    const eyebrow = $('overlayEyebrow');
+    if (eyebrow) {
+      eyebrow.textContent = state === 'map' ? 'CAMPAÑA // SELECCIONÁ TU RUTA'
+        : state === 'between' ? 'TIENDA // PREPARATE PARA EL PRÓXIMO JEFE'
+        : state === 'paused' ? 'COMBATE EN PAUSA'
+        : state === 'won' ? 'CAMPAÑA COMPLETA'
+        : state === 'lost' ? 'SISTEMA DAÑADO'
+        : 'COMBATE // DESTRUÍ EL NÚCLEO';
+    }
+    $('shopPanel').classList.toggle('hidden', state !== 'between');
+    $('mapPanel').classList.toggle('hidden', state !== 'map');
+    startBtn.classList.toggle('hidden', state === 'map');
+    overlay.classList.remove('hidden');
+  }
+
+  function showMap(message = 'Elegí un nodo desbloqueado para combatir. Los jefes derrotados se pueden repetir.') {
+    state = 'map';
+    renderMap();
+    showOverlay('MAPA DE CAMPAÑA', 'Dos mundos, diez jefes y un camino que se abre a medida que avanzás.', '');
+    $('mapMessage').textContent = message;
+  }
+
+  function renderMap() {
+    const mapWorlds = $('mapWorlds');
+    const positions = [
+      [{ x: 12, y: 70 }, { x: 31, y: 43 }, { x: 56, y: 31 }, { x: 81, y: 49 }, { x: 68, y: 78 }],
+      [{ x: 12, y: 32 }, { x: 34, y: 57 }, { x: 58, y: 32 }, { x: 83, y: 53 }, { x: 69, y: 79 }]
+    ];
+    const paths = [
+      'M 42 155 C 46 130, 67 108, 112 94 S 195 57, 224 76 S 310 104, 267 171',
+      'M 42 70 C 55 104, 84 131, 128 120 S 199 59, 237 82 S 310 124, 275 174'
+    ];
+
+    mapWorlds.innerHTML = WORLDS.map((world, worldNumber) => {
+      const worldUnlocked = unlockedBossIndex >= world.startIndex;
+      const allWorldBossesComplete = world.bossIndices.every((index) => completedBosses.has(index));
+      const nodes = world.bossIndices.map((index, nodeIndex) => {
+        const isUnlocked = index <= unlockedBossIndex;
+        const completed = completedBosses.has(index);
+        const isNext = isUnlocked && !completed && index === unlockedBossIndex;
+        const statusClass = completed ? 'completed' : (isUnlocked ? 'unlocked' : 'locked');
+        const icon = completed ? '✓' : (isUnlocked ? String(nodeIndex + 1) : '🔒');
+        const xy = positions[worldNumber][nodeIndex];
+        const mapLabels = ['GUARDIÁN', 'CENTINELA', 'REACTOR', 'HIDRA', 'NÚCLEO OMEGA', 'ECLIPSE', 'SERPIENTE', 'COLOSO SOLAR', 'MATRIZ FANTASMA', 'QUIMERA'];
+        const label = mapLabels[index];
+        return `<button type="button" class="map-node ${statusClass}${isNext ? ' current' : ''}" data-boss-index="${index}" style="left:${xy.x}%;top:${xy.y}%" ${isUnlocked ? '' : 'disabled'} aria-label="${world.name}, jefe ${nodeIndex + 1}: ${BOSSES[index].name}${completed ? ', completado' : isUnlocked ? ', disponible' : ', bloqueado'}">
+          <span class="node-orb">${icon}</span>
+          <span class="node-title">${label}</span>
+          ${completed ? '<span class="node-status">COMPLETADO</span>' : isNext ? '<span class="node-status">SIGUIENTE</span>' : ''}
+        </button>`;
+      }).join('');
+      const worldStatus = allWorldBossesComplete ? 'MUNDO COMPLETADO' : (worldUnlocked ? 'SECTOR ABIERTO' : 'SECTOR BLOQUEADO');
+      return `<article class="world-card ${world.theme}${worldUnlocked ? '' : ' world-locked'}">
+        <div class="world-card-heading">
+          <div><span class="world-kicker">${world.name}</span><h3>${world.title}</h3><p>${world.description}</p></div>
+          <span class="world-badge">${worldUnlocked ? (allWorldBossesComplete ? '✓' : '●') : '🔒'}</span>
+        </div>
+        <div class="map-route" aria-label="Ruta de cinco jefes">
+          <svg viewBox="0 0 360 220" preserveAspectRatio="none" aria-hidden="true"><path d="${paths[worldNumber]}" /></svg>
+          ${nodes}
+        </div>
+        <div class="world-card-footer"><span>${worldStatus}</span><span>${world.bossIndices.filter((index) => completedBosses.has(index)).length}/5 jefes</span></div>
+      </article>`;
+    }).join('');
+  }
+
+  $('mapPanel').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-boss-index]');
+    if (!button || button.disabled || state !== 'map') return;
+    const index = Number(button.dataset.bossIndex);
+    if (!Number.isInteger(index) || index < 0 || index > unlockedBossIndex || index >= BOSSES.length) return;
+    beginLevel(index, { replay: completedBosses.has(index) });
+  });
+
+  function applyUpgrades() {
+    const upgrades = player.upgrades;
+    player.speed = 255 * (1 + upgrades.thrusters * 0.12);
+    player.fireInterval = Math.max(0.075, 0.14 * Math.pow(0.82, upgrades.cadence));
+    player.armorDamage = 1 + upgrades.rounds;
+    player.coreDamage = 2.3 * (1 + upgrades.reactor * 0.27);
+    player.maxHp = 100 + upgrades.hull * 20;
+    player.hp = Math.min(player.hp, player.maxHp);
+  }
+
+  function getUpgradeCost(upgrade) {
+    const level = upgrade.repeatable ? 0 : player.upgrades[upgrade.id];
+    return upgrade.prices[Math.min(level, upgrade.prices.length - 1)];
+  }
+
+  function renderShop() {
+    const shopItems = $('shopItems');
+    $('shopCredits').textContent = String(credits);
+    shopItems.innerHTML = UPGRADES.map((upgrade) => {
+      const level = upgrade.repeatable ? null : player.upgrades[upgrade.id];
+      const maxed = !upgrade.repeatable && level >= upgrade.levels;
+      const cost = getUpgradeCost(upgrade);
+      const canAfford = credits >= cost;
+      const repairUnavailable = upgrade.id === 'repair' && player.hp >= player.maxHp;
+      const disabled = maxed || !canAfford || repairUnavailable;
+      const progress = upgrade.repeatable ? 'Repetible' : `Nivel ${level} / ${upgrade.levels}`;
+      let action = maxed ? 'Máximo' : (upgrade.repeatable ? 'Reparar' : 'Comprar mejora');
+      if (!canAfford && !maxed) action = `Faltan ${cost - credits}`;
+      if (repairUnavailable) action = 'Energía completa';
+      return `
+        <article class="upgrade-card">
+          <div>
+            <h4>${upgrade.name}</h4>
+            <p>${upgrade.description}</p>
+          </div>
+          <div class="upgrade-meta"><span>${progress}</span><strong>${maxed ? '—' : `${cost} cr.`}</strong></div>
+          <button type="button" data-upgrade="${upgrade.id}" ${disabled ? 'disabled' : ''}>${action}</button>
+        </article>`;
+    }).join('');
+  }
+
+  function buyUpgrade(id) {
+    if (state !== 'between') return;
+    const upgrade = UPGRADES.find((item) => item.id === id);
+    if (!upgrade) return;
+    const level = upgrade.repeatable ? 0 : player.upgrades[upgrade.id];
+    if (!upgrade.repeatable && level >= upgrade.levels) return;
+    const cost = getUpgradeCost(upgrade);
+    if (credits < cost) return;
+
+    if (upgrade.id === 'repair') {
+      if (player.hp >= player.maxHp) return;
+      credits -= cost;
+      player.hp = Math.min(player.maxHp, player.hp + 35);
+    } else {
+      credits -= cost;
+      player.upgrades[id]++;
+      const previousMaxHp = player.maxHp;
+      applyUpgrades();
+      if (id === 'hull') player.hp = Math.min(player.maxHp, player.hp + (player.maxHp - previousMaxHp));
+    }
+    renderShop();
+    updateStats();
+  }
+
+  $('shopItems').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-upgrade]');
+    if (button && !button.disabled) buyUpgrade(button.dataset.upgrade);
+  });
+
+  function beginLevel(index, options = {}) {
+    levelIndex = index;
+    boss = makeBoss(levelIndex);
+    shots = [];
+    enemyShots = [];
+    particles = [];
+    shake = 0;
+
+    if (options.fresh || !player) {
+      player = makePlayer();
+    } else if (options.retry || options.replay) {
+      player.x = W * 0.5;
+      player.y = H - 62;
+      player.hp = player.maxHp;
+      player.invuln = 1.35;
+      player.fireCD = 0;
+    } else {
+      player.x = W * 0.5;
+      player.y = H - 62;
+      player.invuln = 1.35;
+      player.fireCD = 0;
+    }
+
+    state = 'playing';
+    overlay.classList.add('hidden');
+    last = performance.now();
+    fpsClock = 0;
+    fpsFrames = 0;
+    updateStats();
+    canvas.focus();
+    requestAnimationFrame(loop);
+  }
+
+  function startCampaign() {
+    setupCampaign();
+    showMap('¡La campaña empezó! Tocá el nodo 1 del Mundo 1 para comenzar.');
+    draw();
+  }
+
+  function togglePause() {
+    if (state === 'playing') {
+      state = 'paused';
+      showOverlay('PAUSA', 'El combate está detenido. Presioná P o el botón para continuar.', 'Continuar');
+    } else if (state === 'paused') {
+      state = 'playing';
+      overlay.classList.add('hidden');
+      last = performance.now();
+      requestAnimationFrame(loop);
+    }
+  }
+
+  function handleOverlayButton() {
+    if (state === 'paused') {
+      togglePause();
+    } else if (state === 'between') {
+      showMap('Comprá mejoras en la tienda y elegí el próximo nodo desbloqueado.');
+    } else if (state === 'lost') {
+      beginLevel(levelIndex, { retry: true });
+    } else if (state === 'won') {
+      startCampaign();
+    }
+  }
+
+  startBtn.addEventListener('click', handleOverlayButton);
+
+  window.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    const onButton = event.target instanceof HTMLElement && Boolean(event.target.closest('button'));
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) || (key === ' ' && !onButton)) event.preventDefault();
+    keys.add(key);
+
+    if (key === 'p') {
+      if (state === 'playing' || state === 'paused') togglePause();
+    }
+    if ((key === 'enter' || key === ' ') && !onButton && ['between', 'won', 'lost'].includes(state)) {
+      handleOverlayButton();
+    }
+  });
+  window.addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
+  window.addEventListener('blur', () => { mouse.down = false; keys.clear(); });
+
+  function toCanvas(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height };
+  }
+  canvas.addEventListener('pointermove', (event) => {
+    const p = toCanvas(event);
+    mouse.x = p.x;
+    mouse.y = p.y;
+  });
+  canvas.addEventListener('pointerdown', (event) => {
+    if (event.button === 0) {
+      mouse.down = true;
+      const p = toCanvas(event);
+      mouse.x = p.x;
+      mouse.y = p.y;
+      canvas.focus();
+    }
+  });
+  window.addEventListener('pointerup', (event) => { if (event.button === 0) mouse.down = false; });
+  canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+
+  function spawnParticle(x, y, color, count = 8, power = 100) {
+    for (let i = 0; i < count; i++) {
+      const angle = rand(0, TAU);
+      const speed = rand(power * .25, power);
+      particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: rand(1, 3), life: rand(.2, .65), maxLife: .65, color });
+    }
+  }
+
+  function shootPlayer() {
+    const dx = mouse.x - player.x;
+    const dy = mouse.y - player.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const vx = dx / distance;
+    const vy = dy / distance;
+    shots.push({ x: player.x + vx * 13, y: player.y + vy * 13, vx: vx * 590, vy: vy * 590, r: 3.2, life: 1.5 });
+    player.fireCD = player.fireInterval;
+    spawnParticle(player.x + vx * 12, player.y + vy * 12, '#80f4ff', 2, 35);
+  }
+
+  function createEnemyShot(x, y, angle, speed, color, size = 5, type = 'normal', extra = {}) {
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    return {
+      x, y, vx, vy, baseVx: vx, baseVy: vy, speed,
+      r: size, life: extra.life ?? 5, age: 0, color, type,
+      turnRate: extra.turnRate ?? 0.9,
+      waveAmplitude: extra.waveAmplitude ?? 22,
+      waveFrequency: extra.waveFrequency ?? 4.2,
+      splitAfter: extra.splitAfter ?? 0.88,
+      splitCount: extra.splitCount ?? 3,
+      didSplit: false,
+      damageScale: extra.damageScale ?? 1
+    };
+  }
+
+  function addEnemyShot(angle, speed, color, radius = 43, size = 5, type = 'normal', extra = {}) {
+    enemyShots.push(createEnemyShot(
+      boss.x + Math.cos(angle) * radius,
+      boss.y + Math.sin(angle) * radius,
+      angle, speed, color, size, type, extra
+    ));
+  }
+
+  function fireRing(count, offset, speedScale, color, options = {}) {
+    for (let i = 0; i < count; i++) {
+      const angle = offset + TAU * i / count;
+      const size = options.size ?? 4.8;
+      addEnemyShot(angle, boss.config.bulletSpeed * speedScale * rand(.94, 1.06), color, boss.r + 10, size, options.type || 'normal', options);
+    }
+  }
+
+  function fireFan(count, spread, baseAngle, speedScale = 1, color = boss.config.bulletColor, options = {}) {
+    for (let i = 0; i < count; i++) {
+      const fraction = count === 1 ? 0 : i / (count - 1) - .5;
+      const angle = baseAngle + fraction * spread;
+      addEnemyShot(angle, boss.config.bulletSpeed * speedScale, color, boss.r + 8, options.size ?? 5.1, options.type || 'normal', options);
+    }
+  }
+
+  function fireBoss() {
+    const cfg = boss.config;
+    const healthRatio = boss.hp / boss.maxHp;
+    const rage = 1 + (1 - healthRatio) * .18;
+    const type = cfg.patterns[boss.pattern % cfg.patterns.length];
+    const aimedAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+    const rotation = boss.angle + boss.pattern * .19;
+    const secondary = cfg.secondBulletColor || cfg.bulletColor;
+
+    if (type === 'radial') {
+      fireRing(cfg.radialCount, rotation * .36, rage, cfg.bulletColor);
+    } else if (type === 'fan') {
+      fireFan(cfg.fanCount, cfg.fanSpread, aimedAngle, rage, cfg.bulletColor);
+    } else if (type === 'spiral') {
+      fireFan(cfg.spiralCount, cfg.spiralSpread, rotation, rage * .88, secondary);
+    } else if (type === 'cross') {
+      const count = cfg.crossCount || 4;
+      for (let i = 0; i < count; i++) {
+        addEnemyShot(rotation + TAU * i / count, cfg.bulletSpeed * rage * .94, secondary, boss.r + 9, 5.2);
+      }
+    } else if (type === 'aimed') {
+      const count = cfg.aimedCount || 3;
+      fireFan(count, .30 + count * .045, aimedAngle, rage * 1.08, cfg.bulletColor);
+    } else if (type === 'doubleRing') {
+      const countA = cfg.radialCount;
+      const countB = Math.max(6, Math.ceil(cfg.radialCount * .65));
+      fireRing(countA, rotation * .3, rage * .78, cfg.bulletColor);
+      fireRing(countB, rotation * .3 + Math.PI / countA, rage * 1.08, secondary);
+    } else if (type === 'curvedFan') {
+      fireFan(cfg.curveCount || 5, cfg.curveSpread || .85, aimedAngle, rage * .86, cfg.bulletColor, {
+        type: 'curve', size: 5.7, turnRate: cfg.turnRate || .95, damageScale: 1.03
+      });
+    } else if (type === 'wave') {
+      fireFan(cfg.waveCount || 5, cfg.waveSpread || .95, aimedAngle, rage * .91, cfg.secondBulletColor || cfg.bulletColor, {
+        type: 'wave', size: 5.8, waveAmplitude: 24, waveFrequency: 4.1, damageScale: 1.04
+      });
+    } else if (type === 'bigRing') {
+      fireRing(cfg.bigCount || 9, rotation * .28, rage * .70, cfg.bulletColor, {
+        type: 'large', size: 10.5, damageScale: 1.32, life: 6.5
+      });
+    } else if (type === 'bigFan') {
+      fireFan(cfg.bigFanCount || 5, cfg.fanSpread || .82, aimedAngle, rage * .73, cfg.secondBulletColor || cfg.bulletColor, {
+        type: 'large', size: 11.5, damageScale: 1.42, life: 6.5
+      });
+    } else if (type === 'split') {
+      fireFan(cfg.fanCount || 5, cfg.fanSpread || .9, aimedAngle, rage * .9, cfg.bulletColor, {
+        type: 'split', size: 6.4, splitAfter: cfg.splitAfter || .88, splitCount: cfg.splitCount || 3, damageScale: 1.08
+      });
+    }
+
+    boss.pattern++;
+    boss.shootCD = Math.max(cfg.minInterval, cfg.interval - (1 - boss.hp / boss.maxHp) * .18);
+    shake = Math.max(shake, type === 'bigRing' || type === 'bigFan' ? 3.4 : 2.2);
+  }
+
+  function defeatBoss() {
+    const firstClear = !completedBosses.has(levelIndex);
+    const bossReward = 55 + worldIndexForBoss(levelIndex) * 35 + stageNumberForBoss(levelIndex) * 12;
+    credits += bossReward;
+    completedBosses.add(levelIndex);
+    unlockedBossIndex = Math.max(unlockedBossIndex, Math.min(BOSSES.length - 1, levelIndex + 1));
+
+    if (levelIndex < BOSSES.length - 1) {
+      const next = BOSSES[levelIndex + 1];
+      const healed = Math.min(35, player.maxHp - player.hp);
+      player.hp += healed;
+      state = 'between';
+      renderShop();
+      const worldNow = worldIndexForBoss(levelIndex) + 1;
+      const worldNext = worldIndexForBoss(levelIndex + 1) + 1;
+      const completionNote = firstClear ? 'Nuevo nodo desbloqueado en el mapa.' : 'Podés volver al mapa y elegir otro combate desbloqueado.';
+      showOverlay(
+        `JEFE ${stageNumberForBoss(levelIndex)} DEL MUNDO ${worldNow} DERROTADO`,
+        `Destruiste a ${boss.config.name}. Ganaste ${bossReward} créditos y recuperaste ${Math.round(healed)} de energía. ${completionNote} Próximo objetivo: ${next.name} (Mundo ${worldNext}) — ${next.subtitle}. ${next.hint}`,
+        'Volver al mapa'
+      );
+    } else {
+      state = 'won';
+      showOverlay(
+        '¡CAMPAÑA COMPLETADA!',
+        `Derrotaste a los 10 jefes de los dos mundos y venciste a la Quimera Gravitacional. Puntaje final: ${Math.floor(score)}. ¡COREBREAKER está completo!`,
+        'Nueva campaña'
+      );
+    }
+    updateStats();
+  }
+
+  function loseGame() {
+    state = 'lost';
+    showOverlay('SISTEMA DAÑADO', `El ${boss.config.name} te venció. Probá moverte por la arena y apuntar mientras esquivás. Tu puntaje: ${Math.floor(score)}. Al reintentar conservarás las mejoras compradas y recuperarás toda la energía.`, 'Reintentar jefe');
+  }
+
+  function damagePlayer(amount, impactX = player.x, impactY = player.y, color = '#ff638e') {
+    if (player.invuln > 0 || state !== 'playing') return false;
+    player.hp = Math.max(0, player.hp - amount);
+    player.invuln = 0.8;
+    shake = Math.max(shake, 8);
+    spawnParticle(impactX, impactY, color, 17, 130);
+    if (player.hp <= 0) loseGame();
+    return true;
+  }
+
+  function handleBossContact() {
+    const dx = player.x - boss.x;
+    const dy = player.y - boss.y;
+    const distance = Math.hypot(dx, dy);
+    // Zona de peligro circular: incluye núcleo, placas y brazos del jefe.
+    // La expulsión impide que el jugador atraviese la armadura y se refugie dentro.
+    const safeDistance = boss.contactRadius + player.r + 5;
+    if (distance >= safeDistance) return;
+
+    const angle = distance > 0.001 ? Math.atan2(dy, dx) : rand(0, TAU);
+    player.x = clamp(boss.x + Math.cos(angle) * safeDistance, player.r, W - player.r);
+    player.y = clamp(boss.y + Math.sin(angle) * safeDistance, player.r, H - player.r);
+    damagePlayer(boss.contactDamage, player.x, player.y, boss.config.glow);
+  }
+
+  function update(dt) {
+    if (state !== 'playing') return;
+
+    gameTime += dt;
+    boss.angle += boss.spin * dt;
+    boss.spin = boss.config.spin + Math.sin(gameTime * .7) * .16;
+
+    stars.forEach((star) => {
+      star.y += star.sp * dt;
+      if (star.y > H) { star.y = 0; star.x = rand(0, W); }
+    });
+
+    let mx = 0;
+    let my = 0;
+    if (keys.has('arrowleft') || keys.has('a')) mx--;
+    if (keys.has('arrowright') || keys.has('d')) mx++;
+    if (keys.has('arrowup') || keys.has('w')) my--;
+    if (keys.has('arrowdown') || keys.has('s')) my++;
+    if (mx || my) {
+      const distance = Math.hypot(mx, my);
+      player.x += mx / distance * player.speed * dt;
+      player.y += my / distance * player.speed * dt;
+    }
+    player.x = clamp(player.x, 18, W - 18);
+    player.y = clamp(player.y, 18, H - 18);
+    player.invuln = Math.max(0, player.invuln - dt);
+    player.fireCD -= dt;
+    if (mouse.down && player.fireCD <= 0) shootPlayer();
+
+    handleBossContact();
+    if (state !== 'playing') { updateStats(); return; }
+
+    boss.shootCD -= dt;
+    if (boss.shootCD <= 0) fireBoss();
+
+    const sector = TAU / boss.armor.length;
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const shot = shots[i];
+      shot.x += shot.vx * dt;
+      shot.y += shot.vy * dt;
+      shot.life -= dt;
+      let remove = shot.life <= 0 || shot.x < -10 || shot.x > W + 10 || shot.y < -10 || shot.y > H + 10;
+
+      if (!remove && boss.hp > 0) {
+        const dx = shot.x - boss.x;
+        const dy = shot.y - boss.y;
+        const distance = Math.hypot(dx, dy);
+        const angle = ((Math.atan2(dy, dx) - boss.angle) % TAU + TAU) % TAU;
+        const index = Math.round(angle / sector) % boss.armor.length;
+        const rawDiff = Math.abs(angle - index * sector);
+        const angleDiff = Math.min(rawDiff, TAU - rawDiff);
+        const plate = boss.armor[index];
+        const plateHalfWidth = sector * .40;
+
+        // Los proyectiles dañan las placas en el anillo exterior. El núcleo se daña solo al quedar expuesto.
+        if (plate.alive && distance > 43 && distance < 79 && angleDiff < plateHalfWidth) {
+          plate.hp -= player.armorDamage;
+          plate.flash = .14;
+          spawnParticle(shot.x, shot.y, boss.config.armorHot, 5, 65);
+          remove = true;
+          if (plate.hp <= 0) {
+            plate.alive = false;
+            score += 100;
+            credits += 12;
+            const plateAngle = boss.angle + index * sector;
+            spawnParticle(boss.x + Math.cos(plateAngle) * 61, boss.y + Math.sin(plateAngle) * 61, boss.config.armorColor, 22, 165);
+            shake = 7;
+          }
+        } else if (distance < boss.r + 5 && boss.armor.every((plateItem) => !plateItem.alive)) {
+          boss.hp -= player.coreDamage;
+          spawnParticle(shot.x, shot.y, '#83f7ff', 3, 55);
+          score += 5;
+          remove = true;
+          if (boss.hp <= 0) {
+            boss.hp = 0;
+            shots.splice(i, 1);
+            updateStats();
+            defeatBoss();
+            return;
+          }
+        }
+      }
+
+      if (remove) shots.splice(i, 1);
+    }
+
+    if (state !== 'playing') { updateStats(); return; }
+
+    for (let i = enemyShots.length - 1; i >= 0; i--) {
+      const shot = enemyShots[i];
+      const oldAge = shot.age;
+      shot.age += dt;
+
+      // Los proyectiles curvos giran gradualmente hacia la posición actual del jugador.
+      if (shot.type === 'curve') {
+        const currentAngle = Math.atan2(shot.vy, shot.vx);
+        const targetAngle = Math.atan2(player.y - shot.y, player.x - shot.x);
+        const difference = Math.atan2(Math.sin(targetAngle - currentAngle), Math.cos(targetAngle - currentAngle));
+        const angle = currentAngle + clamp(difference, -shot.turnRate * dt, shot.turnRate * dt);
+        shot.vx = Math.cos(angle) * shot.speed;
+        shot.vy = Math.sin(angle) * shot.speed;
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+      } else if (shot.type === 'wave') {
+        const perpX = -shot.baseVy / (shot.speed || 1);
+        const perpY = shot.baseVx / (shot.speed || 1);
+        const oldWave = Math.sin(oldAge * shot.waveFrequency) * shot.waveAmplitude;
+        const newWave = Math.sin(shot.age * shot.waveFrequency) * shot.waveAmplitude;
+        shot.x += shot.vx * dt + perpX * (newWave - oldWave);
+        shot.y += shot.vy * dt + perpY * (newWave - oldWave);
+      } else {
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+      }
+
+      // Algunas balas grandes se separan en tres proyectiles pequeños.
+      if (shot.type === 'split' && !shot.didSplit && shot.age >= shot.splitAfter) {
+        shot.didSplit = true;
+        const baseAngle = Math.atan2(shot.vy, shot.vx);
+        const count = Math.max(3, shot.splitCount);
+        for (let n = 0; n < count; n++) {
+          const spreadPos = count === 1 ? 0 : n / (count - 1) - .5;
+          const angle = baseAngle + spreadPos * .92;
+          enemyShots.push(createEnemyShot(shot.x, shot.y, angle, shot.speed * .77, shot.color, Math.max(3.4, shot.r * .56), 'normal', {
+            life: 3.8, damageScale: .82
+          }));
+        }
+        spawnParticle(shot.x, shot.y, shot.color, 9, 75);
+        enemyShots.splice(i, 1);
+        continue;
+      }
+
+      shot.life -= dt;
+      if (shot.life <= 0 || shot.x < -30 || shot.x > W + 30 || shot.y < -30 || shot.y > H + 30) {
+        enemyShots.splice(i, 1);
+        continue;
+      }
+      const distance = Math.hypot(shot.x - player.x, shot.y - player.y);
+      if (distance < shot.r + player.r && player.invuln <= 0) {
+        enemyShots.splice(i, 1);
+        damagePlayer(boss.config.damage * (shot.damageScale || 1), player.x, player.y, shot.color || '#ff638e');
+        if (state !== 'playing') break;
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const particle = particles[i];
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vx *= Math.pow(.12, dt);
+      particle.vy *= Math.pow(.12, dt);
+      particle.life -= dt;
+      if (particle.life <= 0) particles.splice(i, 1);
+    }
+    boss.armor.forEach((plate) => { plate.flash = Math.max(0, plate.flash - dt); });
+    shake = Math.max(0, shake - 30 * dt);
+    score += dt * 2;
+    updateStats();
+  }
+
+  function line(x1, y1, x2, y2, color, width = 1) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  function polygonPath(sides, radius, innerRadius = null, rotation = -Math.PI / 2) {
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const angle = rotation + i * Math.PI * 2 / sides;
+      const r = innerRadius !== null && i % 2 === 1 ? innerRadius : radius;
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  function drawCore() {
+    const cfg = boss.config;
+    const exposed = boss.armor.every((plate) => !plate.alive);
+    ctx.save();
+    ctx.translate(boss.x, boss.y);
+    ctx.rotate(boss.angle * .45);
+    ctx.shadowBlur = exposed ? 30 : 16;
+    ctx.shadowColor = exposed ? '#67e8f9' : cfg.glow;
+    ctx.fillStyle = exposed ? '#153e55' : cfg.coreColor;
+    ctx.strokeStyle = exposed ? '#8bf4ff' : cfg.armorHot;
+    ctx.lineWidth = 3;
+
+    if (cfg.shape === 'diamond') {
+      polygonPath(4, boss.r, boss.r * .78, Math.PI / 4);
+    } else if (cfg.shape === 'octagon') {
+      polygonPath(8, boss.r, boss.r * .82, Math.PI / 8);
+    } else if (cfg.shape === 'star') {
+      polygonPath(10, boss.r, boss.r * .59);
+    } else if (cfg.shape === 'eclipse') {
+      ctx.beginPath();
+      ctx.arc(0, 0, boss.r, 0, TAU);
+    } else if (cfg.shape === 'omega') {
+      polygonPath(12, boss.r, boss.r * .74, Math.PI / 12);
+    } else if (cfg.shape === 'serpent') {
+      polygonPath(6, boss.r, boss.r * .50, boss.angle * .35);
+    } else if (cfg.shape === 'sun') {
+      polygonPath(16, boss.r, boss.r * .78, boss.angle * .2);
+    } else if (cfg.shape === 'gear') {
+      polygonPath(16, boss.r, boss.r * .66, -boss.angle * .3);
+    } else if (cfg.shape === 'singularity') {
+      ctx.beginPath(); ctx.arc(0, 0, boss.r, 0, TAU);
+    } else {
+      polygonPath(6, boss.r, boss.r * .82, Math.PI / 6);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (cfg.shape === 'eclipse' || cfg.shape === 'singularity') {
+      ctx.fillStyle = '#070b1b';
+      ctx.beginPath();
+      ctx.arc(7, -3, boss.r * .66, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = exposed ? '#b1fcff' : (cfg.shape === 'singularity' ? '#ffbaf2' : '#bf9cff');
+      ctx.lineWidth = cfg.shape === 'singularity' ? 4 : 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, boss.r * .72, -.85 + boss.angle * .4, 2.35 + boss.angle * .4);
+      ctx.stroke();
+      if (cfg.shape === 'singularity') {
+        ctx.beginPath(); ctx.arc(0, 0, boss.r * .43, 0, TAU);
+        ctx.strokeStyle = '#fff5'; ctx.lineWidth = 2; ctx.stroke();
+      }
+    } else if (cfg.shape === 'sun') {
+      ctx.strokeStyle = '#fff5c288'; ctx.lineWidth = 3;
+      for (let i = 0; i < 8; i++) {
+        const a = i * TAU / 8 + boss.angle * .2;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * boss.r * .34, Math.sin(a) * boss.r * .34);
+        ctx.lineTo(Math.cos(a) * boss.r * .75, Math.sin(a) * boss.r * .75); ctx.stroke();
+      }
+    } else {
+      ctx.rotate(-boss.angle * .9 + gameTime * 1.8);
+      ctx.fillStyle = exposed ? '#72f1ff' : cfg.armorColor;
+      for (let i = 0; i < 3; i++) {
+        ctx.rotate(TAU / 3);
+        ctx.fillRect(-2, -boss.r * .62, 4, boss.r * .47);
+      }
+    }
+
+    const pulse = 1 + Math.sin(gameTime * 5) * .08;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10 * pulse, 0, TAU);
+    ctx.fillStyle = exposed ? '#b5fbff' : cfg.armorHot;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, TAU);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBoss() {
+    const cfg = boss.config;
+    const sector = TAU / boss.armor.length;
+
+    // Brazos y silueta exterior propios de cada jefe.
+    ctx.save();
+    ctx.translate(boss.x, boss.y);
+    ctx.rotate(-boss.angle * .6);
+    const armCount = cfg.arms;
+    for (let i = 0; i < armCount; i++) {
+      ctx.rotate(TAU / armCount);
+      ctx.fillStyle = '#16243d';
+      ctx.strokeStyle = cfg.armorColor;
+      ctx.globalAlpha = .8;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(boss.r * .72, -7);
+      ctx.lineTo(82, -5);
+      ctx.lineTo(101, 0);
+      ctx.lineTo(82, 5);
+      ctx.lineTo(boss.r * .72, 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = cfg.glow + '88';
+      ctx.fillRect(45, -2, 27, 4);
+    }
+    ctx.restore();
+
+    // Anillo orbitando las placas.
+    ctx.save();
+    ctx.translate(boss.x, boss.y);
+    ctx.rotate(boss.angle);
+    ctx.beginPath();
+    ctx.arc(0, 0, 83, 0, TAU);
+    ctx.strokeStyle = cfg.armorColor + '66';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 8]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    boss.armor.forEach((plate, index) => {
+      if (!plate.alive) return;
+      const centerAngle = index * sector;
+      const startAngle = centerAngle - sector * .40;
+      const endAngle = centerAngle + sector * .40;
+      const plateColor = plate.flash > 0 ? '#ffffff' : (plate.hp <= 1 ? cfg.armorHot : cfg.armorColor);
+      ctx.beginPath();
+      ctx.arc(0, 0, 61, startAngle, endAngle);
+      ctx.strokeStyle = plateColor;
+      ctx.lineWidth = 15;
+      ctx.lineCap = 'butt';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 0, 61, startAngle, endAngle);
+      ctx.strokeStyle = '#ffffff55';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#fff5cf';
+      ctx.beginPath();
+      ctx.arc(Math.cos(centerAngle) * 61, Math.sin(centerAngle) * 61, 2.2, 0, TAU);
+      ctx.fill();
+    });
+    ctx.restore();
+
+    drawCore();
+
+    // Barra circular de vida del núcleo.
+    ctx.beginPath();
+    ctx.arc(boss.x, boss.y, 106, -Math.PI / 2, -Math.PI / 2 + TAU * (boss.hp / boss.maxHp));
+    ctx.strokeStyle = cfg.glow;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(boss.x, boss.y, 106, -Math.PI / 2, Math.PI * 1.5);
+    ctx.strokeStyle = '#ffffff20';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  function draw() {
+    ctx.save();
+    if (shake > 0) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+    ctx.clearRect(-20, -20, W + 40, H + 40);
+
+    const background = ctx.createRadialGradient(CX, CY, 15, CX, CY, 580);
+    background.addColorStop(0, '#111d37');
+    background.addColorStop(1, '#050916');
+    ctx.fillStyle = background;
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+
+    stars.forEach((star) => {
+      ctx.globalAlpha = star.a;
+      ctx.fillStyle = '#d6eeff';
+      ctx.fillRect(star.x, star.y, star.r, star.r);
+    });
+    ctx.globalAlpha = 1;
+
+    // Cuadrícula y guías de la arena.
+    ctx.strokeStyle = '#28405d55';
+    ctx.lineWidth = 1;
+    for (let radius = 70; radius < 500; radius += 70) {
+      ctx.beginPath(); ctx.arc(CX, CY, radius, 0, TAU); ctx.stroke();
+    }
+    for (let x = 0; x <= W; x += 80) line(x, 0, x, H, '#20345122');
+    for (let y = 0; y <= H; y += 80) line(0, y, W, y, '#20345122');
+
+    drawBoss();
+
+    shots.forEach((shot) => {
+      ctx.save();
+      ctx.shadowBlur = 13;
+      ctx.shadowColor = '#72f4ff';
+      ctx.fillStyle = '#d9fcff';
+      ctx.beginPath(); ctx.arc(shot.x, shot.y, shot.r, 0, TAU); ctx.fill();
+      ctx.restore();
+    });
+    enemyShots.forEach((shot) => {
+      ctx.save();
+      ctx.shadowBlur = shot.type === 'large' ? 22 : 12;
+      ctx.shadowColor = shot.color;
+      ctx.fillStyle = shot.color;
+      if (shot.type === 'large') {
+        ctx.beginPath(); ctx.arc(shot.x, shot.y, shot.r + 2, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#fff9'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(shot.x, shot.y, Math.max(2, shot.r * .42), 0, TAU);
+        ctx.fillStyle = '#fff9'; ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(shot.x, shot.y, shot.r, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#fff8'; ctx.lineWidth = 1; ctx.stroke();
+        if (shot.type === 'curve' || shot.type === 'wave' || shot.type === 'split') {
+          ctx.globalAlpha = .48;
+          ctx.beginPath(); ctx.arc(shot.x - shot.vx * .035, shot.y - shot.vy * .035, shot.r * 1.5, 0, TAU);
+          ctx.strokeStyle = shot.color; ctx.lineWidth = 2; ctx.stroke();
+        }
+      }
+      ctx.restore();
+    });
+
+    // El jugador tiene forma de pequeña nave/cursor.
+    const aim = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(aim);
+    ctx.globalAlpha = player.invuln > 0 && Math.floor(gameTime * 18) % 2 === 0 ? .32 : 1;
+    ctx.shadowBlur = 17;
+    ctx.shadowColor = '#69eaff';
+    ctx.fillStyle = '#72eaff';
+    ctx.strokeStyle = '#e8fdff';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(15, 0); ctx.lineTo(-8, -8); ctx.lineTo(-4, 0); ctx.lineTo(-8, 8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, TAU); ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    particles.forEach((particle) => {
+      ctx.globalAlpha = clamp(particle.life / particle.maxLife, 0, 1);
+      ctx.fillStyle = particle.color;
+      ctx.beginPath(); ctx.arc(particle.x, particle.y, particle.r, 0, TAU); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Mira del mouse.
+    ctx.strokeStyle = '#b7f8ffbb';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 7, 0, TAU); ctx.stroke();
+    line(mouse.x - 12, mouse.y, mouse.x - 5, mouse.y, '#b7f8ff99');
+    line(mouse.x + 5, mouse.y, mouse.x + 12, mouse.y, '#b7f8ff99');
+    line(mouse.x, mouse.y - 12, mouse.x, mouse.y - 5, '#b7f8ff99');
+    line(mouse.x, mouse.y + 5, mouse.x, mouse.y + 12, '#b7f8ff99');
+
+    ctx.font = '700 11px system-ui';
+    ctx.fillStyle = '#9fb6d4';
+    const armorText = boss.armor.every((plate) => !plate.alive) ? 'NÚCLEO EXPUESTO' : 'ARMADURA ACTIVA';
+    ctx.fillText(`MUNDO ${worldIndexForBoss(levelIndex) + 1} · JEFE ${stageNumberForBoss(levelIndex)}/5 // ${boss.config.name} // ${armorText}`, 18, 24);
+    ctx.fillStyle = '#6b829f';
+    ctx.fillText(`PUNTAJE ${String(Math.floor(score)).padStart(5, '0')}`, W - 128, 24);
+    ctx.restore();
+  }
+
+  function loop(now) {
+    if (state !== 'playing') return;
+    const dt = Math.min(.033, Math.max(0, (now - last) / 1000));
+    last = now;
+    fpsFrames++;
+    fpsClock += dt;
+    if (fpsClock >= .5) {
+      fps = Math.round(fpsFrames / fpsClock);
+      $('fpsStat').textContent = fps;
+      fpsClock = 0;
+      fpsFrames = 0;
+    }
+    update(dt);
+    draw();
+    if (state === 'playing') requestAnimationFrame(loop);
+  }
+
+  setupCampaign();
+  showMap('¡La campaña empezó! Tocá el nodo 1 del Mundo 1 para comenzar.');
+  draw();
+})();
