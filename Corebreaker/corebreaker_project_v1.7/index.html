@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COREBREAKER — Campaña 2D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="eyebrow">Campaña arcade · Boss rush 2D</div>
+        <h1>CORE<span>BREAKER</span></h1>
+        <p class="subtitle">Dos mundos, diez jefes principales y un desafío secreto opcional.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Ruta</span><strong id="levelStat">M1 · 1/5</strong></div>
+        <div class="stat"><span>Armadura</span><strong id="armorStat">8 / 8</strong></div>
+        <div class="stat"><span>Vida del jefe</span><strong id="bossStat">100%</strong></div>
+        <div class="stat"><span>Tu energía</span><strong id="playerStat">100 / 100</strong></div>
+        <div class="stat"><span>Créditos</span><strong id="creditsStat">0</strong></div>
+        <div class="stat"><span>Arma</span><strong id="weaponStat">Pulso</strong></div>
+        <div class="stat"><span>FPS</span><strong id="fpsStat">—</strong></div>
+      </div>
+    </header>
+
+    <section class="arena">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="Juego Corebreaker"></canvas>
+      <section class="combat-hud" id="combatHud" hidden aria-label="Indicadores de combate">
+        <div class="boss-hud-line"><strong id="bossNameHud">EL GUARDIÁN</strong><span id="phaseHud" class="phase-pill">FASE 1</span><span id="bossPercentHud">100%</span></div>
+        <div class="boss-health-track"><span id="bossHealthFill"></span></div>
+        <div class="player-hud-line">
+          <span id="weaponHud">Arma: Pulso [1]</span>
+          <span id="dashHud">Esquiva disponible</span>
+          <span id="buffHud">Sin efectos</span>
+        </div>
+        <div class="dash-track"><span id="dashFill"></span></div>
+      </section>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <div class="eyebrow" id="overlayEyebrow">CAMPAÑA // SELECCIONÁ TU RUTA</div>
+          <h2 id="overlayTitle">MAPA DE CAMPAÑA</h2>
+          <p id="overlayText">Elegí un nodo desbloqueado para entrar al combate. Los jefes derrotados se pueden repetir.</p>
+          <section id="mapPanel" class="world-map" aria-label="Mapa de campaña">
+            <div id="mapWorlds" class="worlds-grid"></div>
+            <p id="mapMessage" class="map-message">¡La campaña empezó! Tocá el nodo 1 del Mundo 1 para comenzar.</p>
+            <section id="secretBossPanel" class="secret-boss hidden" aria-label="Desafío secreto">
+              <div class="secret-kicker">⚠ RUTA OCULTA DESBLOQUEADA</div>
+              <h3>EL ARQUITECTO DEL VACÍO</h3>
+              <p>Completaste los diez jefes. Este desafío opcional no reemplaza el final ni cambia la ruta principal.</p>
+              <button id="secretBossBtn" class="secret-boss-button" type="button" data-boss-index="10">Desafiar al jefe secreto</button>
+            </section>
+            <div class="map-actions">
+              <button id="newCampaignBtn" class="secondary-button hidden" type="button">↻ Nueva campaña</button>
+              <button id="achievementsBtn" class="secondary-button" type="button">🏆 Ver logros</button>
+            </div>
+          </section>
+          <section id="achievementsPanel" class="achievements hidden" aria-label="Logros de la campaña">
+            <div class="achievement-summary"><strong id="achievementCount">0 / 10 logros</strong><span>Se guardan automáticamente en este navegador.</span></div>
+            <div id="achievementItems" class="achievement-items"></div>
+          </section>
+          <section id="shopPanel" class="shop hidden" aria-label="Tienda de mejoras">
+            <div class="shop-heading">
+              <div>
+                <div class="eyebrow">Preparación para el próximo combate</div>
+                <h3>Tienda de mejoras</h3>
+              </div>
+              <div class="shop-wallet"><span>Créditos</span><strong id="shopCredits">0</strong></div>
+            </div>
+            <h4 class="shop-section-title">Mejoras de la nave</h4>
+            <div id="shopItems" class="shop-items"></div>
+            <h4 class="shop-section-title">Arsenal · equipá un arma o desbloqueá otra</h4>
+            <div id="weaponItems" class="shop-items weapon-items"></div>
+            <p class="shop-note" id="shopNote">Comprá mejoras antes de continuar. Las armas y las mejoras se guardan durante la campaña.</p>
+          </section>
+          <button id="startBtn">Iniciar combate</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="bottom">
+      <div class="keys">
+        <span>Mover:</span><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd>
+        <span>o</span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+        <span>· Pausa:</span><kbd>P</kbd>
+      </div>
+      <div>Apuntar: mouse · Disparar: mantener clic izquierdo</div>
+      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" title="Activar o silenciar la música y los efectos">🔊 Sonido: activado</button>
+    </div>
+
+    <section class="settings-strip" aria-label="Ajustes del juego">
+      <label class="setting-control difficulty-control">Dificultad
+        <select id="difficultySelect" aria-label="Dificultad para los próximos combates">
+          <option value="easy">Tranquila</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Difícil</option>
+        </select>
+      </label>
+      <label class="setting-control volume-control">Música <span id="musicVolumeLabel">40%</span>
+        <input id="musicVolume" type="range" min="0" max="100" step="5" value="40" aria-label="Volumen de música">
+      </label>
+      <label class="setting-control volume-control">Efectos <span id="sfxVolumeLabel">75%</span>
+        <input id="sfxVolume" type="range" min="0" max="100" step="5" value="75" aria-label="Volumen de efectos de sonido">
+      </label>
+      <span class="settings-note">La dificultad se aplica al próximo jefe.</span>
+    </section>
+
+    <div class="tip">
+      <strong>Campaña:</strong> dos mundos con cinco jefes cada uno. Usá <kbd>Shift</kbd> o <kbd>Espacio</kbd> para esquivar, <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> para cambiar de arma y recogé los objetos que aparecen periódicamente en zonas libres de la arena. Tu progreso y los logros se guardan automáticamente en este navegador.
+    </div>
+    <div id="achievementToast" class="achievement-toast hidden" role="status" aria-live="polite"></div>
+  </main>
+  <script src="game.js" defer></script>
+</body>
+</html>

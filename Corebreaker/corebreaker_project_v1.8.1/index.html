@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COREBREAKER 3.1 — Overdrive</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="eyebrow">Campaña arcade · Boss rush 2D</div>
+        <h1>CORE<span>BREAKER</span></h1>
+        <p class="subtitle">Edición experimental 3.1 · Overdrive · Mundos compactos y selección rápida de jefes.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Ruta</span><strong id="levelStat">M1 · 1/5</strong></div>
+        <div class="stat"><span>Armadura</span><strong id="armorStat">8 / 8</strong></div>
+        <div class="stat"><span>Vida del jefe</span><strong id="bossStat">100%</strong></div>
+        <div class="stat"><span>Tu energía</span><strong id="playerStat">100 / 100</strong></div>
+        <div class="stat"><span>Créditos</span><strong id="creditsStat">0</strong></div>
+        <div class="stat"><span>Arma</span><strong id="weaponStat">Pulso</strong></div>
+        <div class="stat"><span>Racha</span><strong id="comboStat">x0</strong></div>
+        <div class="stat"><span>FPS</span><strong id="fpsStat">—</strong></div>
+      </div>
+    </header>
+
+    <section class="combat-hud" id="combatHud" hidden aria-label="Indicadores de combate">
+      <div class="combat-hud-boss">
+        <div class="boss-hud-line"><strong id="bossNameHud">EL GUARDIÁN</strong><span id="phaseHud" class="phase-pill">FASE 1</span><span id="bossPercentHud">100%</span></div>
+        <div class="boss-health-track"><span id="bossHealthFill"></span></div>
+      </div>
+      <div class="combat-hud-player">
+        <div class="player-hud-line">
+          <span id="weaponHud">Arma: Pulso [1]</span>
+          <span id="dashHud">Esquiva lista</span>
+          <span id="buffHud">Sin efectos</span>
+        </div>
+        <div class="dash-track" aria-label="Recarga de la esquiva"><span id="dashFill"></span></div>
+      </div>
+    </section>
+
+    <section class="skill-hud" id="skillHud" hidden aria-label="Habilidades activas">
+      <button class="skill-card nova-skill" id="abilityNovaButton" type="button" aria-label="Pulso Nova, tecla Q">
+        <span class="skill-key">Q</span><span class="skill-art">✺</span>
+        <span class="skill-copy"><strong>PULSO NOVA</strong><small id="abilityNovaStatus">LISTO · limpia proyectiles cercanos</small><span class="skill-meter"><i id="abilityNovaFill"></i></span></span>
+      </button>
+      <button class="skill-card aegis-skill" id="abilityAegisButton" type="button" aria-label="Égida de fase, tecla E">
+        <span class="skill-key">E</span><span class="skill-art">◇</span>
+        <span class="skill-copy"><strong>ÉGIDA DE FASE</strong><small id="abilityAegisStatus">LISTA · invulnerabilidad breve</small><span class="skill-meter"><i id="abilityAegisFill"></i></span></span>
+      </button>
+      <button class="skill-card lance-skill" id="abilityLanceButton" type="button" aria-label="Lanza de ruptura, tecla R">
+        <span class="skill-key">R</span><span class="skill-art">➤</span>
+        <span class="skill-copy"><strong>LANZA DE RUPTURA</strong><small id="abilityLanceStatus">LISTA · daño concentrado</small><span class="skill-meter"><i id="abilityLanceFill"></i></span></span>
+      </button>
+    </section>
+
+    <section class="arena">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="Juego Corebreaker"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <div class="eyebrow" id="overlayEyebrow">MENÚ PRINCIPAL</div>
+          <h2 id="overlayTitle">COREBREAKER</h2>
+          <p id="overlayText">Elegí cómo querés continuar tu aventura.</p>
+          <section id="mainMenuPanel" class="main-menu-panel" aria-label="Menú principal">
+            <div class="main-menu-emblem" aria-hidden="true">✦</div>
+            <p class="main-menu-tagline">DOS MUNDOS · 10 JEFES · 3 HABILIDADES ACTIVAS</p>
+            <button id="playCampaignBtn" class="main-menu-play" type="button">▶ Jugar campaña</button>
+            <div class="main-menu-secondary">
+              <button id="mainMenuSettingsBtn" class="secondary-button" type="button">⚙ Configuración</button>
+              <button id="mainMenuAchievementsBtn" class="secondary-button" type="button">🏆 Ver logros</button>
+            </div>
+            <div class="experimental-feature-row"><span>✺ Pulso Nova</span><span>◇ Égida</span><span>➤ Lanza</span><span>◷ Crono</span></div><p class="main-menu-note">Probá esta edición experimental sin borrar tu progreso estable. Las habilidades se recargan en cada combate.</p>
+          </section>
+          <section id="mapPanel" class="world-map hidden" aria-label="Mapa de campaña">
+            <div id="mapWorlds" class="worlds-grid"></div>
+            <p id="mapMessage" class="map-message">¡La campaña empezó! Tocá el nodo 1 del Mundo 1 para comenzar.</p>
+            <section id="secretBossPanel" class="secret-boss hidden" aria-label="Desafío secreto">
+              <div class="secret-kicker">⚠ RUTA OCULTA DESBLOQUEADA</div>
+              <h3>EL ARQUITECTO DEL VACÍO</h3>
+              <p>Completaste los diez jefes. Este desafío opcional no reemplaza el final ni cambia la ruta principal.</p>
+              <button id="secretBossBtn" class="secret-boss-button" type="button" data-boss-index="10">Desafiar al jefe secreto</button>
+            </section>
+            <div class="map-actions">
+              <button id="backToMenuBtn" class="secondary-button" type="button">⌂ Menú principal</button>
+              <button id="newCampaignBtn" class="secondary-button hidden" type="button">↻ Nueva campaña</button>
+              <button id="achievementsBtn" class="secondary-button" type="button">🏆 Ver logros</button>
+              <button id="settingsBtn" class="secondary-button" type="button">⚙ Configuración</button>
+            </div>
+          </section>
+          <section id="achievementsPanel" class="achievements hidden" aria-label="Logros de la campaña">
+            <div class="achievement-summary"><strong id="achievementCount">0 / 13 logros</strong><span>Se guardan automáticamente en este navegador.</span></div>
+            <div id="achievementItems" class="achievement-items"></div>
+          </section>
+          <section id="settingsPanel" class="settings-panel hidden" aria-label="Configuración del juego">
+            <div class="settings-heading">
+              <span class="settings-icon">⚙</span>
+              <div><h3>Configuración</h3><p>Personalizá el audio y la dificultad.</p></div>
+            </div>
+            <div class="settings-section">
+              <h4>Audio</h4>
+              <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" title="Activar o silenciar música y efectos">🔊 Sonido: activado</button>
+              <label class="setting-control volume-control">Música <span id="musicVolumeLabel">40%</span>
+                <input id="musicVolume" type="range" min="0" max="100" step="5" value="40" aria-label="Volumen de música">
+              </label>
+              <label class="setting-control volume-control">Efectos de sonido <span id="sfxVolumeLabel">75%</span>
+                <input id="sfxVolume" type="range" min="0" max="100" step="5" value="75" aria-label="Volumen de efectos de sonido">
+              </label>
+            </div>
+            <div class="settings-section">
+              <h4>Jugabilidad</h4>
+              <label class="setting-control difficulty-control">Dificultad para próximos combates
+                <select id="difficultySelect" aria-label="Dificultad para los próximos combates">
+                  <option value="easy">Tranquila</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="hard">Difícil</option>
+                </select>
+              </label>
+              <p class="settings-note">La dificultad se aplica al iniciar el próximo jefe. Si el jefe secreto se te hace demasiado difícil, probá Tranquila sin perder tu progreso.</p>
+            </div>
+          </section>
+          <section id="shopPanel" class="shop hidden" aria-label="Tienda de mejoras">
+            <div class="shop-heading">
+              <div>
+                <div class="eyebrow">Preparación para el próximo combate</div>
+                <h3>Tienda de mejoras</h3>
+              </div>
+              <div class="shop-wallet"><span>Créditos</span><strong id="shopCredits">0</strong></div>
+            </div>
+            <h4 class="shop-section-title">Mejoras de la nave</h4>
+            <div id="shopItems" class="shop-items"></div>
+            <h4 class="shop-section-title">Arsenal · equipá un arma o desbloqueá otra</h4>
+            <div id="weaponItems" class="shop-items weapon-items"></div>
+            <p class="shop-note" id="shopNote">Comprá mejoras antes de continuar. Las armas y las mejoras se guardan durante la campaña.</p>
+          </section>
+          <button id="startBtn">Iniciar combate</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="bottom">
+      <div class="keys">
+        <span>Mover:</span><kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd>
+        <span>o</span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+        <span>· Pausa:</span><kbd>P</kbd>
+      </div>
+      <div>Apuntar: mouse · Disparar: clic izquierdo · <kbd>Q</kbd> Nova · <kbd>E</kbd> Égida · <kbd>R</kbd> Lanza · <kbd>M</kbd> audio</div>
+    </div>
+
+    <div class="tip">
+      <strong>Edición experimental:</strong> además de esquivar con <kbd>Shift</kbd> o <kbd>Espacio</kbd>, usá <kbd>Q</kbd> para limpiar proyectiles, <kbd>E</kbd> para activar la Égida y <kbd>R</kbd> para disparar una Lanza perforante. El objeto Crono ralentiza los disparos enemigos. Las habilidades vuelven a estar listas en cada nuevo combate. Tu progreso y los logros se guardan automáticamente en este navegador.
+    </div>
+    <div id="achievementToast" class="achievement-toast hidden" role="status" aria-live="polite"></div>
+  </main>
+  <script src="game.js" defer></script>
+</body>
+</html>

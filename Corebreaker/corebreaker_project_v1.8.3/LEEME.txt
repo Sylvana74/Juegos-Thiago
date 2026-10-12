@@ -1,0 +1,71 @@
+COREBREAKER — OVERDRIVE 3.2 (EDICIÓN EXPERIMENTAL)
+=================================================
+
+ARCHIVOS
+--------
+index.html : página del juego, menú principal y pantallas.
+style.css  : diseño visual, interfaz compacta y HUD.
+game.js    : combate, jefes, armas, habilidades, objetos, audio y progreso.
+
+CÓMO JUGAR
+----------
+1. Extraé la carpeta completa.
+2. Abrí index.html con doble clic en Chrome, Edge o Firefox.
+3. En «Jugar campaña», seleccioná Mundo 1 o Mundo 2.
+4. Elegí un jefe desbloqueado. Los jefes anteriores se pueden repetir.
+5. Tras derrotar los diez jefes, aparece una tercera tarjeta junto a ambos mundos:
+   «Jefe secreto», que permite desafiar o volver a desafiar al Arquitecto del Vacío.
+
+CONTROLES
+---------
+Flechas o WASD : mover la nave.
+Mouse          : apuntar.
+Clic izquierdo : disparar mientras se mantiene pulsado.
+Shift o Espacio: esquiva rápida con invulnerabilidad breve.
+1              : Pulso.
+2              : Triple (se desbloquea en la tienda).
+3              : Láser (se desbloquea en la tienda).
+Q              : Pulso Nova; neutraliza proyectiles cercanos.
+E              : Égida de Fase; invulnerabilidad temporal.
+R              : Lanza de Ruptura; disparo perforante.
+P              : pausar o continuar.
+M              : activar/silenciar audio.
+
+MECÁNICAS OVERDRIVE
+-------------------
+- Dos mundos con cinco jefes principales cada uno.
+- Cada jefe tiene una fase 2 con secuencia de ataques propia.
+- Tres habilidades activas: Pulso Nova, Égida de Fase y Lanza de Ruptura.
+- Objetos de curación, escudo, sobrecarga, créditos y Fragmento Crono.
+- Rachas de impactos con bonificación de puntuación.
+- Tres armas, mejoras, tienda, logros, audio configurable y dificultad seleccionable.
+- El menú de selección muestra dos tarjetas compactas; al completar la campaña,
+  el Arquitecto se presenta como tercera tarjeta en la misma fila, no debajo.
+- El Arquitecto del Vacío es un desafío opcional, más exigente que la Quimera:
+  16 placas reforzadas, 500 de vida base, proyectiles más veloces y secuencias
+  avanzadas en su fase final. Los anillos conservan una abertura para esquivar.
+- Los buffs temporales y la recarga del dash se reinician al comenzar cada jefe.
+
+GUARDADO
+--------
+Esta edición usa la clave local «corebreaker-save-v4-experimental» y está separada
+ de la versión estable. Si no existe un guardado experimental previo, puede tomar
+ como punto de partida el guardado estable compatible. A partir de ese momento,
+ los cambios se guardan en la clave experimental.
+
+CONSEJOS
+--------
+- Usá Pulso Nova cuando los proyectiles estén cerca, no apenas aparezcan.
+- Reservá Égida para atravesar una zona muy peligrosa o durante una esquiva difícil.
+- La Lanza es más útil cuando el núcleo está expuesto o hay una línea clara al jefe.
+- En el Arquitecto, mirá la abertura del anillo, cambiá de dirección y aprovechá
+  la pequeña ventana de reposicionamiento tras cada cuatro ataques.
+
+Esta versión es experimental: conservá la versión estable en otra carpeta.
+
+
+AJUSTE VISUAL DE SELECTOR (3.2)
+-------------------------------
+Las tres tarjetas del selector (Mundo 1, Mundo 2 y Jefe Secreto) se muestran
+apiladas verticalmente y ocupan todo el ancho disponible del panel. No se
+modificaron la dificultad, las habilidades, el guardado ni otras mecánicas.

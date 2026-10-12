@@ -1,0 +1,135 @@
+COREBREAKER — OVERDRIVE 3.1
+=========================
+
+ARCHIVOS
+--------
+index.html  : estructura de la página y menús.
+style.css   : apariencia, mapa, HUD, tienda y logros.
+game.js     : combate, jefes, armas, objetos, audio y progreso.
+
+CÓMO JUGAR
+----------
+1. Extraé todos los archivos a una misma carpeta.
+2. Abrí index.html con doble clic para jugar en Chrome, Edge o Firefox.
+3. En «Jugar campaña», elegí Mundo 1 o Mundo 2.
+4. Dentro del mundo, elegí uno de los cinco jefes desbloqueados.
+5. Usá «Volver a mundos» para elegir el otro mundo.
+
+CONTROLES
+---------
+Flechas o WASD : mover la nave.
+Mouse          : apuntar.
+Clic izquierdo: disparar mientras se mantiene pulsado.
+Shift o Espacio: esquiva rápida con unos instantes de invulnerabilidad.
+1              : arma Pulso (inicial y equilibrada).
+2              : arma Triple (desbloqueable en la tienda).
+3              : arma Láser (desbloqueable en la tienda).
+Q              : Pulso Nova (limpia proyectiles cercanos).
+E              : Égida de Fase (invulnerabilidad breve).
+R              : Lanza de Ruptura (daño concentrado).
+P              : pausar o continuar.
+M              : activar/silenciar audio (también disponible en Configuración).
+
+NOVEDADES
+---------
+- Esquiva con recarga; su barra aparece durante el combate.
+- Cada uno de los diez jefes tiene una secuencia exclusiva en fase 2, con nombre, color y perfil de ataques propio.
+- El Arquitecto del Vacío fue reequilibrado: menos vida y placas, disparos menos densos, una abertura segura en sus anillos y ventanas de recuperación entre ataques.
+- La segunda fase muestra una transición con nombre y descripción propios; al activarse, limpia proyectiles viejos y deja una pausa breve para reaccionar.
+- Tres armas distintas: Pulso, Triple y Láser.
+- Cada 8,5–10,5 segundos pueden aparecer objetos de curación, escudo, sobrecarga
+  de disparo o créditos extra en zonas libres de la arena (máximo dos a la vez).
+- HUD de vida del jefe, fase, arma equipada, esquiva y efectos temporales.
+- Dificultad Tranquila, Normal o Difícil (se aplica al siguiente combate).
+- Menú de Configuración dentro del mapa, con volumen de música, efectos, botón de silencio y dificultad.
+- Volumen independiente de música y efectos de sonido.
+- Diez logros, visibles desde el botón «Ver logros» del mapa.
+- Al completar los diez jefes se desbloquea un jefe secreto opcional: El Arquitecto del Vacío.
+- Derrotar al jefe final ya no reinicia la campaña: se puede volver al mapa, repetir combates y empezar una nueva campaña manualmente. El reinicio pide confirmación.
+- Guardado automático de jefes desbloqueados, jefes completados, créditos,
+  mejoras, armas, dificultad, volumen y logros usando el almacenamiento local
+  del navegador.
+
+TIENDA
+------
+Al derrotar a un jefe (salvo el jefe final de campaña) aparece la tienda.
+Podés comprar mejoras existentes y desbloquear/equipar Triple o Láser.
+Las armas adquiridas y las mejoras se conservan si cerrás y volvés a abrir
+el juego usando el mismo navegador, perfil y ubicación de la carpeta.
+
+NOTAS
+-----
+No necesita instalaciones, bibliotecas externas ni conexión a Internet.
+El sonido se genera con Web Audio API dentro del navegador.
+El guardado depende de que el navegador permita almacenamiento local para
+esta ubicación de la carpeta. Si el navegador lo bloquea, el juego sigue funcionando, pero
+el progreso puede no persistir al cerrar la página.
+
+
+CORRECCIONES 2.6
+----------------
+- La mira sigue el cursor aunque pase por encima de la barra de vida del jefe.
+- Los buffs temporales de escudo y sobrecarga se eliminan al morir y al reintentar.
+- Las mejoras permanentes compradas y el progreso guardado se conservan.
+
+
+CAMBIOS 2.7
+-----------
+- HUD de combate reubicado fuera del canvas para no tapar al jefe, al jugador ni los proyectiles.
+- La barra de vida del jefe y la recarga del dash quedan en una franja compacta sobre la arena.
+- Los buffs temporales se reinician al empezar cualquier jefe nuevo, tanto después de una victoria como al reintentar.
+- Nuevo menú principal con «Jugar campaña», «Configuración» y «Ver logros».
+- «Jugar campaña» abre el mapa con los dos mundos y mantiene la progresión guardada.
+- Desde el mapa se puede volver al menú principal sin reiniciar el progreso.
+
+
+COREBREAKER 3.0 — OVERDRIVE (EDICIÓN EXPERIMENTAL)
+===================================================
+Esta versión es una prueba de concepto separada de la versión estable.
+
+NUEVAS MECÁNICAS
+----------------
+- Pulso Nova (Q): despeja proyectiles cercanos y brinda una pequeña ventana de invulnerabilidad. Recarga: 12 s.
+- Égida de Fase (E): invulnerabilidad temporal para escapar de una ráfaga. Recarga: 18 s.
+- Lanza de Ruptura (R): disparo perforante con daño concentrado contra placas o núcleo. Recarga: 8 s.
+- Fragmento Crono: objeto morado que ralentiza los proyectiles enemigos por 5,5 s.
+- Racha de impactos: encadená impactos sin dejar pasar demasiado tiempo para sumar puntos y desbloquear un logro.
+- Tres nuevos logros ligados a habilidades, combos y fragmentos Crono (13 logros en total).
+- Presentación breve al comenzar cada jefe y aviso visual justo antes de cada ataque.
+- Interfaz de habilidades con teclas, barra de recarga y estados de disponibilidad.
+
+CONTROLES NUEVOS
+----------------
+Q: Pulso Nova.
+E: Égida de Fase.
+R: Lanza de Ruptura.
+Las tres habilidades también se pueden activar con los botones que aparecen sobre la arena.
+
+IMPORTANTE
+----------
+Si todavía no existe un guardado experimental, la versión importa los datos de corebreaker-save-v3 para que puedas continuar desde tu progreso estable. A partir de ahí guarda en corebreaker-save-v4-experimental, sin modificar la partida estable.
+Esta es una edición EXPERIMENTAL: probala en una carpeta aparte; la campaña y los ajustes que hagas acá quedan separados de la versión estable.
+Las habilidades empiezan listas en cada combate; sus enfriamientos no se guardan entre jefes.
+
+
+NOVEDAD 3.1 — SELECCIÓN COMPACTA DE MUNDOS
+-----------------------------------------
+- Al entrar a Jugar campaña aparecen dos tarjetas: Mundo 1 y Mundo 2.
+- Cada tarjeta abre una pantalla con los cinco jefes de ese mundo.
+- El botón «Volver a mundos» regresa al selector sin perder el contexto.
+- Los jefes bloqueados se pueden consultar, pero no iniciar hasta desbloquearlos.
+- El progreso de jefes completados y el jefe secreto siguen disponibles.
+- Esta actualización solo cambia la navegación visual; mantiene la clave de guardado
+  experimental de Corebreaker 3.0 y no modifica las mecánicas Overdrive.
+
+
+ACTUALIZACIÓN EXPERIMENTAL 3.1 — NAVEGACIÓN COMPACTA
+---------------------------------------------------
+- El selector de campaña muestra solo dos tarjetas principales: Mundo 1 y Mundo 2.
+- Al elegir un mundo, se abre una cuadrícula compacta con exactamente cinco jefes.
+- «Volver a mundos» regresa al selector para entrar al otro mundo.
+- Se puede consultar el Mundo 2 aun bloqueado; los jefes bloqueados no se pueden iniciar.
+- El jefe secreto sigue en el selector principal una vez desbloqueado.
+- La actualización conserva las habilidades Overdrive, el objeto Crono, la racha,
+  los jefes, la tienda, los logros y la clave de guardado experimental v4.
+- No modifica el guardado de Corebreaker 2.7.
