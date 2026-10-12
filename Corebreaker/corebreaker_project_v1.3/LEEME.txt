@@ -1,0 +1,38 @@
+COREBREAKER — MAPA DE CAMPAÑA Y 10 JEFES
+=======================================
+
+CÓMO ABRIRLO
+1. Extraé el ZIP en una carpeta.
+2. Abrí index.html con doble clic para jugar en Chrome u otro navegador moderno.
+3. Para cambiar el código, abrí esa misma carpeta desde Visual Studio Code.
+No necesita Internet ni instalaciones adicionales para jugar.
+
+CONTROLES
+- Flechas o W, A, S, D: mover la nave/cursor.
+- Mouse: apuntar.
+- Clic izquierdo mantenido: disparar.
+- P: pausar y reanudar.
+
+MAPA Y CAMPAÑA
+- Hay dos mundos y cinco jefes por mundo (10 combates en total).
+- El mapa tiene nodos seleccionables: los dorados son el próximo combate, los verdes ya fueron vencidos y los candados siguen bloqueados.
+- Al vencer un jefe, se abre la tienda. Comprá mejoras y pulsá “Volver al mapa” para elegir el siguiente nodo.
+- Los jefes completados se pueden repetir; el progreso desbloqueado no retrocede.
+- Mundo 1: El Guardián, Centinela Orbital, Reactor Inestable, Hidra de Plasma y Núcleo Omega.
+- Mundo 2: Eclipse, Serpiente Nebular, Coloso Solar, Matriz Fantasma y Quimera Gravitacional.
+
+NUEVOS PROYECTILES DEL MUNDO 2
+- Curvos: giran gradualmente hacia el jugador; conviene cambiar de dirección.
+- Grandes: se mueven más despacio, ocupan más espacio y hacen más daño.
+- Ondulantes: se desplazan haciendo un zigzag lateral.
+- Divisibles: se separan en varios proyectiles pequeños al avanzar.
+
+TIENDA
+- Disparo rápido, munición perforante, núcleo amplificado, blindaje, propulsores y reparación.
+- Las mejoras permanecen durante la campaña y al reintentar.
+- Ganás créditos por destruir placas y vencer jefes.
+
+ARCHIVOS
+- index.html: estructura de la página, mapa y tienda.
+- style.css: colores, tamaños, nodos del mapa y aspecto visual.
+- game.js: movimiento, jefes, proyectiles, daño, tienda, mejoras y progresión.
